@@ -33,7 +33,7 @@ from XMUSIC.misc import db
 from XMUSIC.utils.database import add_active_video_chat, is_active_chat
 from XMUSIC.utils.exceptions import AssistantErr
 from XMUSIC.utils.inline import aq_markup, close_markup, stream_markup
-from XMUSIC.utils.pastebin import NandBin
+from XMUSIC.utils.pastebin import XMUSICBIN
 from XMUSIC.utils.stream.queue import put_queue, put_queue_index
 from XMUSIC.utils.thumbnails import gen_thumb
 
