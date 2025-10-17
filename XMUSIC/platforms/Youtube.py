@@ -14,6 +14,7 @@ import glob
 import random
 import logging
 import aiohttp
+from os import getenv
 
 API_URL = getenv("API_URL", 'https://api.thequickearn.xyz')
 VIDEO_API_URL = getenv("VIDEO_API_URL", 'https://api.video.thequickearn.xyz')
