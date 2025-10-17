@@ -86,11 +86,8 @@ OWNER_ID=            # Required - Your Telegram user ID
 LOGGER_ID=           # Required - Log group/channel ID
 STRING_SESSION=      # Required - Generate from @SessionBuilderbot
 MONGO_DB_URI=        # Required - MongoDB connection string
-COOKIE_URL=          # Required - YT Cookies url
-
 DEEP_API=            # Optional - Get from https://deepai.org
-API_KEY=             # Optional - External API key for music Download
-API_URL=             # Optional - External API url for music Download
+API_URL=             # Required - External API url for music Download
 ```
 
 ⚠️ **Never expose raw cookies or tokens in public repos.** Use safe paste services like [Pastebin](https://pastebin.com) or [Batbin](https://batbin.me).
