@@ -41,5 +41,5 @@ telegraph
 tgcrypto
 unidecode
 wget
-yt-dlp==2025.9.5
+yt-dlp
 youtube-search-python
