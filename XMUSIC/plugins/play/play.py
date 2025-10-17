@@ -1,32 +1,8 @@
-# Copyright (c) 2025 Nand Yaduwanshi <NoxxOP>
-# Location: Supaul, Bihar
-#
-# All rights reserved.
-#
-# This code is the intellectual property of Nand Yaduwanshi.
-# You are not allowed to copy, modify, redistribute, or use this
-# code for commercial or personal projects without explicit permission.
-#
-# Allowed:
-# - Forking for personal learning
-# - Submitting improvements via pull requests
-#
-# Not Allowed:
-# - Claiming this code as your own
-# - Re-uploading without credit or permission
-# - Selling or using commercially
-#
-# Contact for permissions:
-# Email: badboy809075@gmail.com
-
-
 import random
 import string
-
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message
 from pytgcalls.exceptions import NoActiveGroupCall
-
 import config
 from XMUSIC import Apple, Resso, SoundCloud, Spotify, Telegram, YouTube, app
 from XMUSIC.core.call import JARVIS
@@ -113,7 +89,6 @@ async def play_commnd(
                 "path": file_path,
                 "dur": dur,
             }
-
             try:
                 await stream(
                     _,
@@ -313,7 +288,7 @@ async def play_commnd(
             return await mystic.delete()
         else:
             try:
-                await Nand.stream_call(url)
+                await JARVIS.stream_call(url)
             except NoActiveGroupCall:
                 await mystic.edit_text(_["black_9"])
                 return await app.send_message(
@@ -355,8 +330,13 @@ async def play_commnd(
         if "-v" in query:
             query = query.replace("-v", "")
         try:
+            print(f"[DEBUG] Searching YouTube for: {query}")
             details, track_id = await YouTube.track(query)
-        except:
+            print(f"[DEBUG] Track found: {details.get('title', 'Unknown')}")
+        except Exception as e:
+            print(f"[ERROR] YouTube.track() failed: {e}")
+            import traceback
+            traceback.print_exc()
             return await mystic.edit_text(_["play_3"])
         streamtype = "youtube"
     if str(playmode) == "Direct":
@@ -691,15 +671,3 @@ async def slider_queries(client, CallbackQuery, _):
         return await CallbackQuery.edit_message_media(
             media=med, reply_markup=InlineKeyboardMarkup(buttons)
         )
-
-
-# ©️ Copyright Reserved - @NoxxOP  Nand Yaduwanshi
-
-# ===========================================
-# ©️ 2025 Nand Yaduwanshi (aka @NoxxOP)
-# 🔗 GitHub : https://github.com/NoxxOP/ShrutiMusic
-# 📢 Telegram Channel : https://t.me/ShrutiBots
-# ===========================================
-
-
-# ❤️ Love From ShrutiBots 
