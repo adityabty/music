@@ -15,12 +15,8 @@ import glob
 import random
 import logging
 import aiohttp
-from os import getenv
-
-# Get API configuration from environment variables with fallback values
-API_URL = getenv("API_URL", 'https://api.thequickearn.xyz')
-VIDEO_API_URL = getenv("VIDEO_API_URL", 'https://api.video.thequickearn.xyz')
-API_KEY = getenv("API_KEY", None)
+import config
+from config import API_URL, VIDEO_API_URL, API_KEY
 
 
 def cookie_txt_file():
