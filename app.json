@@ -46,19 +46,9 @@
       "required": true,
       "value": ""
     },
-    "COOKIE_URL": {
-      "description": "Direct raw link (from Batbin or Pastebin) to your YouTube cookies.txt file for better download support.",
-      "required": true,
-      "value": ""
-    },
-    "API_URL": {
-      "description": "(Optional) URL of a custom API server used for music downloads or other services.",
-      "required": false,
-      "value": ""
-    },
     "API_KEY": {
       "description": "(Optional) API Key associated with your custom music download server (used with API_URL).",
-      "required": false,
+      "required": true,
       "value": ""
     },
     "DEEP_API": {
