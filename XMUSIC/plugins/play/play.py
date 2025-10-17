@@ -28,22 +28,22 @@ from pyrogram.types import InlineKeyboardMarkup, InputMediaPhoto, Message
 from pytgcalls.exceptions import NoActiveGroupCall
 
 import config
-from ShrutiMusic import Apple, Resso, SoundCloud, Spotify, Telegram, YouTube, app
-from ShrutiMusic.core.call import JARVIS
-from ShrutiMusic.utils import seconds_to_min, time_to_seconds
-from ShrutiMusic.utils.channelplay import get_channeplayCB
-from ShrutiMusic.utils.decorators.language import languageCB
-from ShrutiMusic.utils.decorators.play import PlayWrapper
-from ShrutiMusic.utils.formatters import formats
-from ShrutiMusic.utils.inline import (
+from XMUSIC import Apple, Resso, SoundCloud, Spotify, Telegram, YouTube, app
+from XMUSIC.core.call import JARVIS
+from XMUSIC.utils import seconds_to_min, time_to_seconds
+from XMUSIC.utils.channelplay import get_channeplayCB
+from XMUSIC.utils.decorators.language import languageCB
+from XMUSIC.utils.decorators.play import PlayWrapper
+from XMUSIC.utils.formatters import formats
+from XMUSIC.utils.inline import (
     botplaylist_markup,
     livestream_markup,
     playlist_markup,
     slider_markup,
     track_markup,
 )
-from ShrutiMusic.utils.logger import play_logs
-from ShrutiMusic.utils.stream.stream import stream
+from XMUSIC.utils.logger import play_logs
+from XMUSIC.utils.stream.stream import stream
 from config import BANNED_USERS, lyrical
 
 
