@@ -15,9 +15,9 @@ import random
 import logging
 import aiohttp
 
-API_URL = 'https://api.thequickearn.xyz'
-VIDEO_API_URL = 'https://api.video.thequickearn.xyz'
-API_KEY = '30DxNexGenBotsc20df9'
+API_URL = getenv("API_URL", 'https://api.thequickearn.xyz')
+VIDEO_API_URL = getenv("VIDEO_API_URL", 'https://api.video.thequickearn.xyz')
+API_KEY = getenv("API_KEY", None)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
