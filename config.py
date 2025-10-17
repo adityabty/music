@@ -29,8 +29,6 @@ TG_AUDIO_FILESIZE_LIMIT = int(getenv("TG_AUDIO_FILESIZE_LIMIT", "157286400"))
 TG_VIDEO_FILESIZE_LIMIT = int(getenv("TG_VIDEO_FILESIZE_LIMIT", "1288490189"))
 PLAYLIST_FETCH_LIMIT = int(getenv("PLAYLIST_FETCH_LIMIT", "30"))
 
-# ── External APIs ──────────────────────────────────────────────────────────────
-COOKIE_URL = getenv("COOKIE_URL")
 API_URL = getenv("API_URL", 'https://api.thequickearn.xyz')
 VIDEO_API_URL = getenv("VIDEO_API_URL", 'https://api.video.thequickearn.xyz')
 API_KEY = getenv("API_KEY", None)
