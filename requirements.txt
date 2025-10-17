@@ -24,3 +24,6 @@ yt-dlp
 youtube-search-python==1.6.6
 httpx==0.23.3
 uvloop
+whois
+pyfiglet
+qrcode
