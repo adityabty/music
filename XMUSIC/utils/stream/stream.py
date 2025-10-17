@@ -35,7 +35,7 @@ from XMUSIC.utils.exceptions import AssistantErr
 from XMUSIC.utils.inline import aq_markup, close_markup, stream_markup
 from XMUSIC.utils.pastebin import XMUSICBIN
 from XMUSIC.utils.stream.queue import put_queue, put_queue_index
-from XMUSIC.utils.thumbnails import gen_thumb
+from XMUSIC.utils.thumbnails import get_thumb
 
 
 async def stream(
@@ -120,7 +120,7 @@ async def stream(
                     "video" if video else "audio",
                     forceplay=forceplay,
                 )
-                img = await gen_thumb(vidid)
+                img = await get_thumb(vidid)
                 button = stream_markup(_, chat_id)
                 run = await app.send_photo(
                     original_chat_id,
@@ -214,7 +214,7 @@ async def stream(
                 "video" if video else "audio",
                 forceplay=forceplay,
             )
-            img = await gen_thumb(vidid)
+            img = await get_thumb(vidid)
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
@@ -382,7 +382,7 @@ async def stream(
                 "video" if video else "audio",
                 forceplay=forceplay,
             )
-            img = await gen_thumb(vidid)
+            img = await get_thumb(vidid)
             button = stream_markup(_, chat_id)
             run = await app.send_photo(
                 original_chat_id,
