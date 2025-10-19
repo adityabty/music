@@ -13,7 +13,7 @@ google-api-python-client
 gpytranslate
 gtts
 heroku3
-httpx[http2]==0.23.3
+httpx[http2]==0.28.1
 kurigram==2.2.12
 lexica-api
 motor
