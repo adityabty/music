@@ -56,9 +56,7 @@ STRING4 = getenv("STRING_SESSION4")
 STRING5 = getenv("STRING_SESSION5")
 
 START_VIDS = [
-    "https://files.catbox.moe/hemr2n.mp4",
-    "https://files.catbox.moe/hemr2n.mp4",
-    "https://files.catbox.moe/hemr2n.mp4",
+    "https://files.catbox.moe/m1k6yr.mp4",
 ]
 STICKERS = [
     "CAACAgUAAx0Cd6nKUAACASBl_rnalOle6g7qS-ry-aZ1ZpVEnwACgg8AAizLEFfI5wfykoCR4h4E",
