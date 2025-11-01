@@ -30,7 +30,7 @@ def private_panel(_):
         ],
         [    
             InlineKeyboardButton(text=_["S_B_3"], callback_data="open_help"),
-            InlineKeyboardButton(text=_['Channel'], url="https://t.me/Xmusicsupport"),
+            
           
         ],
         [                InlineKeyboardButton(text=["SourceCode"], url="https://github.com/adityabty/music.git"),
