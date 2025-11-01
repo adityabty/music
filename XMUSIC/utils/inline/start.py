@@ -34,6 +34,6 @@ def private_panel(_):
         ],
         [          
             InlineKeyboardButton(text=_["S_B_4"], url="https://github.com/adityabty/music.git")
-        ]
+        ],
     ]
     return buttons
