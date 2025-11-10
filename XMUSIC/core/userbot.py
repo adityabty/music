@@ -10,9 +10,9 @@ assistantids = []
 GROUPS_TO_JOIN = [
     "TheGlobalHub",
     "Xmusicsupport1",
-    "TeamXUpdate",
+    "infinity_era1",
     "Xmusicsupport",
-    "TeamsXchat",
+    "Infinity_Era",
 ]
 
 
