@@ -14,7 +14,7 @@ gpytranslate
 gtts
 heroku3
 httpx[http2]==0.23.3
-kurigram==2.2.12
+kurigram==2.2.15
 lexica-api
 motor
 nekosbest
