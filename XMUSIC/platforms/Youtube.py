@@ -7,23 +7,22 @@ import requests
 import yt_dlp
 from pyrogram.enums import MessageEntityType
 from pyrogram.types import Message
-from youtubesearchpython.__future__ import VideosSearch
-from XMUSIC.utils.database import is_on_off
-from XMUSIC import app
-from XMUSIC.utils.formatters import time_to_seconds
+from py_yt import VideosSearch
+from ShrutiMusic.utils.database import is_on_off
+from ShrutiMusic import app
+from ShrutiMusic.utils.formatters import time_to_seconds
 import random
 import logging
 import aiohttp
-from XMUSIC import LOGGER
+from ShrutiMusic import LOGGER
 from urllib.parse import urlparse
 
 YOUR_API_URL = None
-FALLBACK_API_URL = "https://shrutibots.site"
 
 async def load_api_url():
     global YOUR_API_URL
     logger = LOGGER("ShrutiMusic.platforms.Youtube.py")
-
+    
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://pastebin.com/raw/rLsBhAQa") as response:
@@ -31,12 +30,8 @@ async def load_api_url():
                     content = await response.text()
                     YOUR_API_URL = content.strip()
                     logger.info(f"API URL loaded successfully")
-                else:
-                    YOUR_API_URL = FALLBACK_API_URL
-                    logger.info(f"Using fallback API URL")
     except Exception as e:
-        YOUR_API_URL = FALLBACK_API_URL
-        logger.info(f"Failed to load from Pastebin, using fallback API URL")
+        pass
 
 try:
     loop = asyncio.get_event_loop()
@@ -48,75 +43,48 @@ except RuntimeError:
     pass
 
 async def get_telegram_file(telegram_link: str, video_id: str, file_type: str) -> str:
-    logger = LOGGER("ShrutiMusic.platforms.Youtube.py")
-
     try:
         extension = ".webm" if file_type == "audio" else ".mkv"
         file_path = os.path.join("downloads", f"{video_id}{extension}")
-
+        
         if os.path.exists(file_path):
             return file_path
-
+        
         parsed = urlparse(telegram_link)
         parts = parsed.path.strip("/").split("/")
-
+        
         if len(parts) < 2:
             return None
-
+            
         channel_name = parts[0]
         message_id = int(parts[1])
-
-        shuffled_assistants = assistants.copy()
-        random.shuffle(shuffled_assistants)
-
-        for idx, assistant_num in enumerate(shuffled_assistants):
-            try:
-                temp_chat_id = -1000000000000 - assistant_num
-                assistant_client = await get_assistant(temp_chat_id)
-
-                if not assistant_client:
-                    continue
-
-                msg = await assistant_client.get_messages(channel_name, message_id)
-
-                os.makedirs("downloads", exist_ok=True)
-                await msg.download(file_name=file_path)
-
-                timeout = 0
-                while not os.path.exists(file_path) and timeout < 60:
-                    await asyncio.sleep(0.5)
-                    timeout += 0.5
-
-                if os.path.exists(file_path):
-                    return file_path
-
-            except Exception as e:
-                error_msg = str(e)
-
-                if "FLOOD_WAIT" in error_msg.upper() or "420" in error_msg:
-                    if idx < len(shuffled_assistants) - 1:
-                        continue
-                    else:
-                        return None
-                else:
-                    if idx < len(shuffled_assistants) - 1:
-                        continue
-                    else:
-                        return None
-
-        return None
-
+        
+        msg = await app.get_messages(channel_name, message_id)
+        
+        os.makedirs("downloads", exist_ok=True)
+        await msg.download(file_name=file_path)
+        
+        timeout = 0
+        while not os.path.exists(file_path) and timeout < 60:
+            await asyncio.sleep(0.5)
+            timeout += 0.5
+        
+        if os.path.exists(file_path):
+            return file_path
+        else:
+            return None
+        
     except Exception as e:
         return None
 
 async def download_song(link: str) -> str:
     global YOUR_API_URL
-
+    
     if not YOUR_API_URL:
         await load_api_url()
         if not YOUR_API_URL:
-            YOUR_API_URL = FALLBACK_API_URL
-
+            return None
+    
     video_id = link.split('v=')[-1].split('&')[0] if 'v=' in link else link
 
     if not video_id or len(video_id) < 3:
@@ -132,7 +100,7 @@ async def download_song(link: str) -> str:
     try:
         async with aiohttp.ClientSession() as session:
             params = {"url": video_id, "type": "audio"}
-
+            
             async with session.get(
                 f"{YOUR_API_URL}/download",
                 params=params,
@@ -145,27 +113,27 @@ async def download_song(link: str) -> str:
 
                 if data.get("link") and "t.me" in str(data.get("link")):
                     telegram_link = data["link"]
-
+                    
                     downloaded_file = await get_telegram_file(telegram_link, video_id, "audio")
                     if downloaded_file:
                         return downloaded_file
                     else:
                         return None
-
+                
                 elif data.get("status") == "success" and data.get("stream_url"):
                     stream_url = data["stream_url"]
-
+                    
                     async with session.get(
                         stream_url,
                         timeout=aiohttp.ClientTimeout(total=300)
                     ) as file_response:
                         if file_response.status != 200:
                             return None
-
+                            
                         with open(file_path, "wb") as f:
                             async for chunk in file_response.content.iter_chunked(16384):
                                 f.write(chunk)
-
+                        
                         return file_path
                 else:
                     return None
@@ -178,12 +146,12 @@ async def download_song(link: str) -> str:
 
 async def download_video(link: str) -> str:
     global YOUR_API_URL
-
+    
     if not YOUR_API_URL:
         await load_api_url()
         if not YOUR_API_URL:
-            YOUR_API_URL = FALLBACK_API_URL
-
+            return None
+    
     video_id = link.split('v=')[-1].split('&')[0] if 'v=' in link else link
 
     if not video_id or len(video_id) < 3:
@@ -199,7 +167,7 @@ async def download_video(link: str) -> str:
     try:
         async with aiohttp.ClientSession() as session:
             params = {"url": video_id, "type": "video"}
-
+            
             async with session.get(
                 f"{YOUR_API_URL}/download",
                 params=params,
@@ -212,27 +180,27 @@ async def download_video(link: str) -> str:
 
                 if data.get("link") and "t.me" in str(data.get("link")):
                     telegram_link = data["link"]
-
+                    
                     downloaded_file = await get_telegram_file(telegram_link, video_id, "video")
                     if downloaded_file:
                         return downloaded_file
                     else:
                         return None
-
+                
                 elif data.get("status") == "success" and data.get("stream_url"):
                     stream_url = data["stream_url"]
-
+                    
                     async with session.get(
                         stream_url,
                         timeout=aiohttp.ClientTimeout(total=600)
                     ) as file_response:
                         if file_response.status != 200:
                             return None
-
+                            
                         with open(file_path, "wb") as f:
                             async for chunk in file_response.content.iter_chunked(16384):
                                 f.write(chunk)
-
+                        
                         return file_path
                 else:
                     return None
@@ -267,12 +235,12 @@ async def check_file_size(link):
     info = await get_format_info(link)
     if info is None:
         return None
-
+    
     formats = info.get('formats', [])
     if not formats:
         print("No formats found.")
         return None
-
+    
     total_size = parse_size(formats)
     return total_size
 
