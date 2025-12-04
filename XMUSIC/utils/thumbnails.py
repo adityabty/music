@@ -64,7 +64,25 @@ def get_vibrant_edge_color(image):
     b_avg = sum(p[2] for p in edge_pixels) // len(edge_pixels)
     return (r_avg, g_avg, b_avg, 255)
 
-# Removed create_premium_glow as we are using direct drawing for neon ring
+def create_premium_glow(size, glow_color, intensity=1.0):
+    glow = Image.new('RGBA', size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(glow)
+    layers = [
+        (0, int(180 * intensity)),
+        (15, int(140 * intensity)),
+        (30, int(100 * intensity)),
+        (45, int(70 * intensity)),
+        (60, int(40 * intensity)),
+        (75, int(20 * intensity))
+    ]
+    for offset, alpha in layers:
+        color = (*glow_color[:3], alpha)
+        draw.rectangle(
+            [offset, offset, size[0]-offset, size[1]-offset],
+            outline=color,
+            width=int(15 + (offset/10))
+        )
+    return glow.filter(ImageFilter.GaussianBlur(25))
 
 # Utility function to convert seconds to MM:SS format
 def secs_to_m_s(seconds):
@@ -76,57 +94,45 @@ def secs_to_m_s(seconds):
     except:
         return "00:00"
 
-def get_total_duration_secs(duration_str):
-    """Tries to parse YouTube duration string into total seconds."""
-    TOTAL_DURATION_SECS = 272 # Default duration (4:32)
-    try:
-        # A robust parsing logic should handle PT, H, M, S format (e.g., using isodate or custom regex)
-        # Keeping your simple parsing logic here, but cautioning about its fragility
-        if "M" in duration_str and "S" in duration_str:
-            parts = duration_str.split('M')
-            minutes = int(parts[0].replace('PT', '').replace('H', '0'))
-            seconds = int(parts[1].replace('S', ''))
-            return (minutes * 60) + seconds
-        elif "M" in duration_str:
-             minutes = int(duration_str.split('M')[0].replace('PT', ''))
-             return minutes * 60
-        elif duration_str.isdigit():
-             return int(duration_str)
-    except:
-        pass
-    return TOTAL_DURATION_SECS
-
 # ---------------- MAIN FUNCTION ----------------
 async def get_thumb(videoid: str):
-    # url = f"https://www.youtube.com/watch?v={videoid}" # Using videoid directly for search is better
+    url = f"https://www.youtube.com/watch?v={videoid}"
     thumb_path = None
     
-    # --- Time Setup ---
-    # Setting to 90 seconds (01:30) to show the progress bar handle, matching your generated image
-    CURRENT_TIME_SECS = 90  
-    TOTAL_DURATION_SECS = 272 
+    # Static current time for the timeline (e.g., 30% of the way through)
+    CURRENT_TIME_SECS = 90  # 01:30
 
     # Fetch YouTube data
     try:
-        # Use videoid directly for robust search
-        results = VideosSearch(videoid, limit=1)
+        results = VideosSearch(url, limit=1)
         result = (await results.next())["result"][0]
         title = result.get("title", "Unknown Title")
         duration_str = result.get("duration") or "Live"
         
-        TOTAL_DURATION_SECS = get_total_duration_secs(duration_str)
+        # Extract total duration in seconds for the progress bar calculation
+        if "M" in duration_str and "S" in duration_str:
+            # Assuming duration is in format like "10M30S" - *This parsing logic may need adjustment based on the actual API response format*
+            parts = duration_str.split('M')
+            minutes = int(parts[0].replace('PT', ''))
+            seconds = int(parts[1].replace('S', ''))
+            TOTAL_DURATION_SECS = (minutes * 60) + seconds
+        elif "M" in duration_str:
+             parts = duration_str.split('M')
+             minutes = int(parts[0].replace('PT', ''))
+             TOTAL_DURATION_SECS = minutes * 60
+        else:
+             TOTAL_DURATION_SECS = 272 # Default duration (4:32) if parsing fails
         
-        duration_display = secs_to_m_s(TOTAL_DURATION_SECS) if TOTAL_DURATION_SECS > 0 else "Live"
+        duration_display = secs_to_m_s(TOTAL_DURATION_SECS) if TOTAL_DURATION_SECS else "Live"
         
         thumburl = result["thumbnails"][0]["url"].split("?")[0]
         views = result.get("viewCount", {}).get("short", "0 views")
         channel = result.get("channel", {}).get("name", "Unknown Channel")
     except Exception as e:
-        # Default data used if YouTube fetch fails
-        print(f"ERROR: YouTube data fetch failed: {e}")
-        title, duration_display, views, channel = "My Awesome Music Track", "04:32", "1.2M views", "MusicChannel"
+        print(f"Error fetching YT data: {e}")
+        title, duration_display, views, channel = "Unknown Title", "04:32", "0 views", "MusicChannel"
         thumburl = YOUTUBE_IMG_URL
-        TOTAL_DURATION_SECS = 272 
+        TOTAL_DURATION_SECS = 272 # Default duration (4:32)
         
     CURRENT_TIME_SECS = min(CURRENT_TIME_SECS, TOTAL_DURATION_SECS) # Clamp current time
     current_time_display = secs_to_m_s(CURRENT_TIME_SECS)
@@ -142,17 +148,14 @@ async def get_thumb(videoid: str):
     except:
         thumb_path = None
 
-    # **FIXED SECTION:** Open base image with better fallback for visibility
+    # Open base image
     try:
         if thumb_path and thumb_path.exists():
             base_img = Image.open(thumb_path).convert("RGBA")
         else:
             base_img = Image.open(DEFAULT_THUMB).convert("RGBA")
-    except Exception as e:
-        # If download and DEFAULT_THUMB fail, use a clearly visible WHITE fallback image
-        print(f"ERROR: Image loading failed (Downloaded or Default). Using WHITE fallback. Error: {e}")
-        # Create a large white image that will be visible when cropped to a circle
-        base_img = Image.new("RGBA", (CANVAS_W, CANVAS_H), (255, 255, 255, 255)) 
+    except:
+        base_img = Image.new("RGBA", (CANVAS_W, CANVAS_H), (30, 30, 30, 255))
 
     # Create background
     bg = change_image_size(CANVAS_W, CANVAS_H, base_img).filter(ImageFilter.GaussianBlur(BG_BLUR))
@@ -168,6 +171,11 @@ async def get_thumb(videoid: str):
 
     canvas = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0,0,0,255))
     canvas.paste(bg, (0,0))
+
+    # --- GLOW LAYER (Around the circular thumbnail) ---
+    edge_color = get_vibrant_edge_color(base_img)
+    # This existing glow layer applies to the whole canvas, let's adjust the circular thumbnail glow below
+
     draw = ImageDraw.Draw(canvas)
 
     # Circular thumbnail
@@ -179,28 +187,32 @@ async def get_thumb(videoid: str):
     art = base_img.resize((thumb_size, thumb_size), Image.LANCZOS)
     art.putalpha(circular_mask)
     
-    # Paste the circular art (Profile Picture)
+    # Paste the circular art
     canvas.paste(art, (circle_x, circle_y), art)
     
-    # --- RED NEON GLOW FOR CIRCULAR THUMBNAIL ---
-    GLOW_COLOR = (255, 30, 0, 255) # Deep Red
-
-    # Neon Glow Ring (Drawn directly on the canvas)
-    glow_size = thumb_size + 15
-    glow_x, glow_y = circle_x - 7, circle_y - 7
+    # --- RED NEON GLOW FOR CIRCULAR THUMBNAIL (As in your image) ---
+    GLOW_COLOR = (255, 60, 0, 255) # Bright Red/Orange
+    glow_size = thumb_size + 40
+    glow_x, glow_y = circle_x - 20, circle_y - 20
     
-    # Draw a thin, slightly blurred red ring for the neon effect
-    for i in range(1, 4):
-        ring_color = (GLOW_COLOR[0], GLOW_COLOR[1], GLOW_COLOR[2], int(255 / (i * 1.5)))
-        draw.ellipse((glow_x - i, glow_y - i, glow_x + glow_size + i, glow_y + glow_size + i), 
-                     outline=ring_color, 
-                     width=2)
-    # Use a separate blurred image for a softer interior glow (optional but good)
-    glow_inner = Image.new("RGBA", (glow_size + 20, glow_size + 20), (0, 0, 0, 0))
-    draw_inner = ImageDraw.Draw(glow_inner)
-    draw_inner.ellipse((10, 10, glow_size + 10, glow_size + 10), outline=GLOW_COLOR, width=10)
-    glow_inner = glow_inner.filter(ImageFilter.GaussianBlur(12))
-    canvas.paste(glow_inner, (glow_x - 10, glow_y - 10), glow_inner)
+    glow_mask = Image.new("L", (glow_size, glow_size), 0)
+    draw_glow_mask = ImageDraw.Draw(glow_mask)
+    draw_glow_mask.ellipse((0, 0, glow_size, glow_size), fill=255)
+    
+    glow_ring = Image.new("RGBA", (glow_size, glow_size), (0,0,0,0))
+    draw_glow_ring = ImageDraw.Draw(glow_ring)
+    
+    # Draw a series of red ellipses with increasing transparency to simulate glow
+    for i in range(25):
+        alpha = int(255 * (1 - (i/25))) # Fade out
+        ring_color = (GLOW_COLOR[0], GLOW_COLOR[1], GLOW_COLOR[2], alpha)
+        draw_glow_ring.ellipse((i, i, glow_size - i, glow_size - i), outline=ring_color, width=2)
+    
+    # Apply Gaussian blur for soft neon effect
+    glow_ring = glow_ring.filter(ImageFilter.GaussianBlur(15))
+    
+    # Paste the glow layer OVER the canvas
+    canvas.paste(glow_ring, (glow_x, glow_y), glow_ring)
 
     # --- TEXT METADATA ---
     np_font = ImageFont.truetype(FONT_BOLD, 40)
@@ -257,13 +269,12 @@ async def get_thumb(videoid: str):
     draw.rectangle([BAR_START_X, BAR_Y, progress_end_x, BAR_Y + BAR_HEIGHT], fill=BAR_FG_COLOR)
     
     # Draw a circle/handle at the current position (Played part)
-    if CURRENT_TIME_SECS > 0: # Only draw handle if progress is past 00:00
-        draw.ellipse([
-            progress_end_x - BAR_HANDLE_SIZE/2, 
-            BAR_Y + BAR_HEIGHT/2 - BAR_HANDLE_SIZE/2, 
-            progress_end_x + BAR_HANDLE_SIZE/2, 
-            BAR_Y + BAR_HEIGHT/2 + BAR_HANDLE_SIZE/2
-        ], fill=BAR_FG_COLOR)
+    draw.ellipse([
+        progress_end_x - BAR_HANDLE_SIZE, 
+        BAR_Y + BAR_HEIGHT/2 - BAR_HANDLE_SIZE, 
+        progress_end_x + BAR_HANDLE_SIZE, 
+        BAR_Y + BAR_HEIGHT/2 + BAR_HANDLE_SIZE
+    ], fill=BAR_FG_COLOR)
 
     # Time text below the bar
     time_font = ImageFont.truetype(FONT_REGULAR, 24)
