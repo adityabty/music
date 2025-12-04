@@ -5,8 +5,9 @@ import traceback
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from youtubesearchpython.__future__ import VideosSearch
-from XMUSIC.core.dir import CACHE_DIR
-from config import YOUTUBE_IMG_URL
+
+# Assuming these are defined in your config.py
+from config import YOUTUBE_IMG_URL, CACHE_DIR 
 
 # ---------------- CONSTANTS ----------------
 CANVAS_W, CANVAS_H = 1280, 720
@@ -20,18 +21,21 @@ TEXT_SHADOW = (0, 0, 0, 180)
 # FONT paths - Make sure these paths are correct in your environment
 FONT_REGULAR = "XMUSIC/assets/thumb/font.ttf"
 FONT_BOLD = "XMUSIC/assets/thumb/font2.ttf"
-DEFAULT_THUMB = "XMUSIC/assets/thumb/default.png"
+DEFAULT_THUMB = "XMUSIC/assets/thumb/default.png" # Must be a valid image file!
 
 # Ensure CACHE_DIR is a Path object
+# Assuming CACHE_DIR is correctly defined and exists
 CACHE_DIR = Path(CACHE_DIR)
 CACHE_DIR.mkdir(exist_ok=True)
 
 # ---------------- UTILITIES ----------------
 def change_image_size(max_w, max_h, image):
+    """Resizes image to fit within max_w and max_h while maintaining aspect ratio."""
     ratio = min(max_w / image.size[0], max_h / image.size[1])
     return image.resize((int(image.size[0]*ratio), int(image.size[1]*ratio)), Image.LANCZOS)
 
 def wrap_text(draw, text, font, max_width):
+    """Wraps text to fit within a max width, limiting to two lines."""
     words = text.split()
     lines = []
     current_line = ""
@@ -47,45 +51,8 @@ def wrap_text(draw, text, font, max_width):
         lines.append(current_line)
     return lines[:2]
 
-def get_vibrant_edge_color(image):
-    img_small = image.resize((100, 100), Image.LANCZOS)
-    pixels = list(img_small.getdata())
-    edge_pixels = []
-    size = 100
-    # Sampling edge pixels
-    for i in range(size):
-        edge_pixels.append(pixels[i])
-        edge_pixels.append(pixels[i * size])
-        edge_pixels.append(pixels[(i + 1) * size - 1])
-        edge_pixels.append(pixels[size * (size - 1) + i])
-    # Calculate average RGB
-    r_avg = sum(p[0] for p in edge_pixels) // len(edge_pixels)
-    g_avg = sum(p[1] for p in edge_pixels) // len(edge_pixels)
-    b_avg = sum(p[2] for p in edge_pixels) // len(edge_pixels)
-    return (r_avg, g_avg, b_avg, 255)
-
-def create_premium_glow(size, glow_color, intensity=1.0):
-    glow = Image.new('RGBA', size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(glow)
-    layers = [
-        (0, int(180 * intensity)),
-        (15, int(140 * intensity)),
-        (30, int(100 * intensity)),
-        (45, int(70 * intensity)),
-        (60, int(40 * intensity)),
-        (75, int(20 * intensity))
-    ]
-    for offset, alpha in layers:
-        color = (*glow_color[:3], alpha)
-        draw.rectangle(
-            [offset, offset, size[0]-offset, size[1]-offset],
-            outline=color,
-            width=int(15 + (offset/10))
-        )
-    return glow.filter(ImageFilter.GaussianBlur(25))
-
-# Utility function to convert seconds to MM:SS format
 def secs_to_m_s(seconds):
+    """Converts seconds to MM:SS format."""
     try:
         seconds = int(seconds)
         minutes = seconds // 60
@@ -94,50 +61,57 @@ def secs_to_m_s(seconds):
     except:
         return "00:00"
 
+def get_total_duration_secs(duration_str):
+    """Tries to parse YouTube duration string into total seconds."""
+    TOTAL_DURATION_SECS = 272 # Default duration (4:32)
+    try:
+        # A simple parsing logic for demonstration (may need refinement based on exact API format)
+        if "M" in duration_str and "S" in duration_str:
+            parts = duration_str.split('M')
+            minutes = int(parts[0].replace('PT', '').replace('H', '0'))
+            seconds = int(parts[1].replace('S', ''))
+            TOTAL_DURATION_SECS = (minutes * 60) + seconds
+        elif "M" in duration_str:
+             minutes = int(duration_str.split('M')[0].replace('PT', ''))
+             TOTAL_DURATION_SECS = minutes * 60
+        elif duration_str.isdigit():
+             TOTAL_DURATION_SECS = int(duration_str)
+    except:
+        pass
+    return TOTAL_DURATION_SECS
+
 # ---------------- MAIN FUNCTION ----------------
 async def get_thumb(videoid: str):
     url = f"https://www.youtube.com/watch?v={videoid}"
     thumb_path = None
     
-    # Static current time for the timeline (e.g., 30% of the way through)
-    CURRENT_TIME_SECS = 90  # 01:30
+    # --- Time Setup (Simulated Playback Progress) ---
+    TOTAL_DURATION_SECS = 272 # Default to 4:32
+    CURRENT_TIME_SECS = 0     # Start time (as in your image)
 
-    # Fetch YouTube data
+    # --- 1. Fetch YouTube data ---
     try:
-        results = VideosSearch(url, limit=1)
+        results = VideosSearch(videoid, limit=1) # Use videoid directly for search
         result = (await results.next())["result"][0]
         title = result.get("title", "Unknown Title")
         duration_str = result.get("duration") or "Live"
         
-        # Extract total duration in seconds for the progress bar calculation
-        if "M" in duration_str and "S" in duration_str:
-            # Assuming duration is in format like "10M30S" - *This parsing logic may need adjustment based on the actual API response format*
-            parts = duration_str.split('M')
-            minutes = int(parts[0].replace('PT', ''))
-            seconds = int(parts[1].replace('S', ''))
-            TOTAL_DURATION_SECS = (minutes * 60) + seconds
-        elif "M" in duration_str:
-             parts = duration_str.split('M')
-             minutes = int(parts[0].replace('PT', ''))
-             TOTAL_DURATION_SECS = minutes * 60
-        else:
-             TOTAL_DURATION_SECS = 272 # Default duration (4:32) if parsing fails
+        TOTAL_DURATION_SECS = get_total_duration_secs(duration_str)
         
-        duration_display = secs_to_m_s(TOTAL_DURATION_SECS) if TOTAL_DURATION_SECS else "Live"
+        duration_display = secs_to_m_s(TOTAL_DURATION_SECS) if TOTAL_DURATION_SECS > 0 else "Live"
         
         thumburl = result["thumbnails"][0]["url"].split("?")[0]
         views = result.get("viewCount", {}).get("short", "0 views")
-        channel = result.get("channel", {}).get("name", "Unknown Channel")
-    except Exception as e:
-        print(f"Error fetching YT data: {e}")
-        title, duration_display, views, channel = "Unknown Title", "04:32", "0 views", "MusicChannel"
-        thumburl = YOUTUBE_IMG_URL
-        TOTAL_DURATION_SECS = 272 # Default duration (4:32)
+        channel = result.get("channel", {}).get("name", "MusicChannel")
         
-    CURRENT_TIME_SECS = min(CURRENT_TIME_SECS, TOTAL_DURATION_SECS) # Clamp current time
-    current_time_display = secs_to_m_s(CURRENT_TIME_SECS)
-    
-    # Download thumbnail
+    except Exception as e:
+        # Debug print for data fetch error
+        print(f"ERROR: YouTube data fetch failed. Using defaults. Error: {e}")
+        title, duration_display, views, channel = "My Awesome Music Track", "04:32", "1.2M views", "MusicChannel"
+        thumburl = YOUTUBE_IMG_URL
+        TOTAL_DURATION_SECS = 272 
+
+    # --- 2. Download thumbnail ---
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(thumburl) as resp:
@@ -145,23 +119,32 @@ async def get_thumb(videoid: str):
                     thumb_path = CACHE_DIR / f"thumb_{videoid}.png"
                     async with aiofiles.open(thumb_path, "wb") as f:
                         await f.write(await resp.read())
-    except:
+                    # Debug print for successful download
+                    # print(f"DEBUG: Thumbnail downloaded successfully to: {thumb_path}")
+                else:
+                    print(f"DEBUG: Download failed with status {resp.status}")
+    except Exception as e:
+        print(f"ERROR: Thumbnail download or save failed: {e}")
         thumb_path = None
 
-    # Open base image
+    # --- 3. Open base image (Handles Fallback) ---
     try:
         if thumb_path and thumb_path.exists():
             base_img = Image.open(thumb_path).convert("RGBA")
         else:
             base_img = Image.open(DEFAULT_THUMB).convert("RGBA")
-    except:
+            # print(f"DEBUG: Falling back to default: {DEFAULT_THUMB}")
+    except Exception as e:
+        print(f"ERROR: Failed to open default image: {e}")
         base_img = Image.new("RGBA", (CANVAS_W, CANVAS_H), (30, 30, 30, 255))
 
-    # Create background
+    # --- 4. Setup Canvas and Background ---
+    
+    # Create background (Blurred and Darkened)
     bg = change_image_size(CANVAS_W, CANVAS_H, base_img).filter(ImageFilter.GaussianBlur(BG_BLUR))
     bg = ImageEnhance.Brightness(bg).enhance(BG_BRIGHTNESS)
 
-    # Frosted overlay gradient (Optional, to darken the bottom)
+    # Frosted overlay gradient (To darken the bottom)
     overlay = Image.new("RGBA", bg.size, (0,0,0,0))
     draw_overlay = ImageDraw.Draw(overlay)
     for i in range(150):
@@ -171,130 +154,105 @@ async def get_thumb(videoid: str):
 
     canvas = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0,0,0,255))
     canvas.paste(bg, (0,0))
-
-    # --- GLOW LAYER (Around the circular thumbnail) ---
-    edge_color = get_vibrant_edge_color(base_img)
-    # This existing glow layer applies to the whole canvas, let's adjust the circular thumbnail glow below
-
     draw = ImageDraw.Draw(canvas)
 
-    # Circular thumbnail
+    # --- 5. Circular Thumbnail with Neon Glow ---
     thumb_size = 360
     circle_x, circle_y = 100, (CANVAS_H-thumb_size)//2
+    GLOW_COLOR = (255, 30, 0, 255) # Deep Red
+
+    # Circular Mask
     circular_mask = Image.new("L", (thumb_size, thumb_size), 0)
     ImageDraw.Draw(circular_mask).ellipse((0,0,thumb_size,thumb_size), fill=255)
     
+    # Resize and mask the image
     art = base_img.resize((thumb_size, thumb_size), Image.LANCZOS)
     art.putalpha(circular_mask)
     
-    # Paste the circular art
-    canvas.paste(art, (circle_x, circle_y), art)
+    # Paste the masked image
+    canvas.paste(art, (circle_x, circle_y), art) 
     
-    # --- RED NEON GLOW FOR CIRCULAR THUMBNAIL (As in your image) ---
-    GLOW_COLOR = (255, 60, 0, 255) # Bright Red/Orange
-    glow_size = thumb_size + 40
-    glow_x, glow_y = circle_x - 20, circle_y - 20
+    # Neon Glow Ring (Drawn directly on the canvas)
+    glow_size = thumb_size + 15
+    glow_x, glow_y = circle_x - 7, circle_y - 7
     
-    glow_mask = Image.new("L", (glow_size, glow_size), 0)
-    draw_glow_mask = ImageDraw.Draw(glow_mask)
-    draw_glow_mask.ellipse((0, 0, glow_size, glow_size), fill=255)
-    
-    glow_ring = Image.new("RGBA", (glow_size, glow_size), (0,0,0,0))
-    draw_glow_ring = ImageDraw.Draw(glow_ring)
-    
-    # Draw a series of red ellipses with increasing transparency to simulate glow
-    for i in range(25):
-        alpha = int(255 * (1 - (i/25))) # Fade out
-        ring_color = (GLOW_COLOR[0], GLOW_COLOR[1], GLOW_COLOR[2], alpha)
-        draw_glow_ring.ellipse((i, i, glow_size - i, glow_size - i), outline=ring_color, width=2)
-    
-    # Apply Gaussian blur for soft neon effect
-    glow_ring = glow_ring.filter(ImageFilter.GaussianBlur(15))
-    
-    # Paste the glow layer OVER the canvas
-    canvas.paste(glow_ring, (glow_x, glow_y), glow_ring)
+    # Draw a thin, slightly blurred red ring for the neon effect
+    for i in range(1, 4):
+        ring_color = (GLOW_COLOR[0], GLOW_COLOR[1], GLOW_COLOR[2], int(255 / (i * 1.5)))
+        draw.ellipse((glow_x - i, glow_y - i, glow_x + glow_size + i, glow_y + glow_size + i), 
+                     outline=ring_color, 
+                     width=2)
+    # Use a separate blurred image for a softer interior glow (optional but good)
+    glow_inner = Image.new("RGBA", (glow_size + 20, glow_size + 20), (0, 0, 0, 0))
+    draw_inner = ImageDraw.Draw(glow_inner)
+    draw_inner.ellipse((10, 10, glow_size + 10, glow_size + 10), outline=GLOW_COLOR, width=10)
+    glow_inner = glow_inner.filter(ImageFilter.GaussianBlur(12))
+    canvas.paste(glow_inner, (glow_x - 10, glow_y - 10), glow_inner)
 
-    # --- TEXT METADATA ---
-    np_font = ImageFont.truetype(FONT_BOLD, 40)
-    title_font = ImageFont.truetype(FONT_BOLD, 75)
+    # --- 6. Text Metadata ---
+    np_font = ImageFont.truetype(FONT_BOLD, 45)
+    title_font = ImageFont.truetype(FONT_BOLD, 70)
     meta_font = ImageFont.truetype(FONT_REGULAR, 32)
 
     np_x = circle_x + thumb_size + 80
     
-    # Text: NOW PLAYING
+    # NOW PLAYING
     np_text = "NOW PLAYING"
     np_y = 140
-    draw.text((np_x, np_y), np_text, fill=TEXT_WHITE, font=np_font)
+    draw.text((np_x, np_y), np_text, fill=TEXT_SOFT, font=np_font)
 
     # Title
-    title_y = np_y + 60
+    title_y = np_y + 70
     title_lines = wrap_text(draw, title, title_font, CANVAS_W - np_x - 60)
     title_text = "\n".join(title_lines)
     draw.multiline_text((np_x, title_y), title_text, fill=TEXT_WHITE, font=title_font, spacing=10)
 
-    # Metadata (Views and Channel)
-    meta_y_start = title_y + len(title_lines) * 85 + 20
-    
-    # Views
-    views_text = f"Views: {views}"
-    draw.text((np_x, meta_y_start), views_text, fill=TEXT_SOFT, font=meta_font)
-    
-    # Channel
-    channel_text = f"Channel: {channel}"
-    draw.text((np_x, meta_y_start + 45), channel_text, fill=TEXT_SOFT, font=meta_font)
+    # Views and Channel
+    meta_y_start = title_y + len(title_lines) * 80 + 20
+    draw.text((np_x, meta_y_start), f"Views: {views}", fill=TEXT_SOFT, font=meta_font)
+    draw.text((np_x, meta_y_start + 45), f"Channel: {channel}", fill=TEXT_SOFT, font=meta_font)
 
-    # --- SPOTIFY-LIKE TIME STRAP / PROGRESS BAR ---
+    # --- 7. Spotify-like Time Strap / Progress Bar ---
     
-    # Layout constants for the progress bar
     BAR_Y = CANVAS_H - 100
-    BAR_MARGIN = 60
-    BAR_START_X = BAR_MARGIN + 100
-    BAR_END_X = CANVAS_W - BAR_MARGIN - 100
+    BAR_MARGIN = 100
+    BAR_START_X = BAR_MARGIN 
+    BAR_END_X = CANVAS_W - BAR_MARGIN
     BAR_WIDTH = BAR_END_X - BAR_START_X
-    BAR_HEIGHT = 8
+    BAR_HEIGHT = 6
     
-    # Progress calculation
-    progress_ratio = CURRENT_TIME_SECS / TOTAL_DURATION_SECS if TOTAL_DURATION_SECS else 0
+    # Progress is currently 00:00, so progress_end_x will be BAR_START_X
+    progress_ratio = CURRENT_TIME_SECS / TOTAL_DURATION_SECS if TOTAL_DURATION_SECS > 0 else 0
     progress_end_x = BAR_START_X + int(BAR_WIDTH * progress_ratio)
     
-    # Colors
-    BAR_BG_COLOR = (255, 255, 255, 100) # Light grey, transparent
-    BAR_FG_COLOR = (255, 0, 0, 255)     # Red (matching the neon glow)
-    BAR_HANDLE_SIZE = 12
-
-    # Draw background bar (Unplayed part)
-    draw.rectangle([BAR_START_X, BAR_Y, BAR_END_X, BAR_Y + BAR_HEIGHT], fill=BAR_BG_COLOR)
+    # Colors (Matching the red neon theme)
+    BAR_BG_COLOR = (255, 255, 255, 100) # Light grey for unplayed
+    BAR_FG_COLOR = (255, 0, 0, 255)     # Red for played
     
-    # Draw foreground bar (Played part)
+    # Draw background bar (Unplayed part - Grey)
+    draw.rectangle([progress_end_x, BAR_Y, BAR_END_X, BAR_Y + BAR_HEIGHT], fill=BAR_BG_COLOR)
+    
+    # Draw foreground bar (Played part - Red)
     draw.rectangle([BAR_START_X, BAR_Y, progress_end_x, BAR_Y + BAR_HEIGHT], fill=BAR_FG_COLOR)
     
-    # Draw a circle/handle at the current position (Played part)
-    draw.ellipse([
-        progress_end_x - BAR_HANDLE_SIZE, 
-        BAR_Y + BAR_HEIGHT/2 - BAR_HANDLE_SIZE, 
-        progress_end_x + BAR_HANDLE_SIZE, 
-        BAR_Y + BAR_HEIGHT/2 + BAR_HANDLE_SIZE
-    ], fill=BAR_FG_COLOR)
-
     # Time text below the bar
-    time_font = ImageFont.truetype(FONT_REGULAR, 24)
+    time_font = ImageFont.truetype(FONT_REGULAR, 28)
     time_y = BAR_Y + BAR_HEIGHT + 10
     
-    # Current Time (Left)
-    draw.text((BAR_START_X, time_y), current_time_display, fill=TEXT_WHITE, font=time_font)
+    # Current Time (Left - 00:00 as per your image)
+    draw.text((BAR_START_X, time_y), secs_to_m_s(CURRENT_TIME_SECS), fill=TEXT_WHITE, font=time_font)
     
-    # Total Duration (Right)
+    # Total Duration (Right - 4:32 as per your image)
     total_time_width = draw.textlength(duration_display, font=time_font)
     draw.text((BAR_END_X - total_time_width, time_y), duration_display, fill=TEXT_WHITE, font=time_font)
 
-
+    # --- 8. Save and Cleanup ---
     out_path = CACHE_DIR / f"{videoid}_xmusic.png"
     canvas.save(out_path, quality=95, optimize=True)
 
-    # Clean up
     if thumb_path and thumb_path.exists():
         try: os.remove(thumb_path)
         except: pass
 
     return str(out_path)
-        
+            
