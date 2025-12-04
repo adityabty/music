@@ -2,6 +2,7 @@ import os
 import aiohttp
 import aiofiles
 import traceback
+from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from youtubesearchpython.__future__ import VideosSearch
 from XMUSIC.core.dir import CACHE_DIR
@@ -20,6 +21,8 @@ FONT_REGULAR = "XMUSIC/assets/thumb/font.ttf"
 FONT_BOLD = "XMUSIC/assets/thumb/font2.ttf"
 DEFAULT_THUMB = "XMUSIC/assets/thumb/default.png"
 
+# Ensure CACHE_DIR is a Path object
+CACHE_DIR = Path(CACHE_DIR)
 CACHE_DIR.mkdir(exist_ok=True)
 
 # ---------------- UTILITIES ----------------
@@ -80,7 +83,6 @@ def create_premium_glow(size, glow_color, intensity=1.0):
 
 # ---------------- MAIN FUNCTION ----------------
 async def get_thumb(videoid: str):
-    CACHE_DIR.mkdir(exist_ok=True)
     url = f"https://www.youtube.com/watch?v={videoid}"
     thumb_path = None
     
