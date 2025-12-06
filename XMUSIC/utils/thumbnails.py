@@ -15,7 +15,7 @@ CANVAS_W, CANVAS_H = 1280, 720
 
 FONT_REGULAR_PATH = "XMUSIC/assets/thumb/font.ttf"
 FONT_BOLD_PATH = "XMUSIC/assets/thumb/font2.ttf"
-DEFAULT_THUMB = "XMUSIC/assets/thumb/default.png"
+DEFAULT_THUMB = "XMUSIC/assets/thumb/IMG_20251204_211306_982.jpg"
 
 CACHE_DIR = Path(CACHE_DIR)
 CACHE_DIR.mkdir(exist_ok=True)
