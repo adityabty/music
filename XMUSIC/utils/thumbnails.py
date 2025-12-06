@@ -7,40 +7,39 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from youtubesearchpython.__future__ import VideosSearch
 from XMUSIC.core.dir import CACHE_DIR
-from config import YOUTUBE_IMG_URL
-
 
 # ---------------- CONSTANTS ----------------
 CANVAS_W, CANVAS_H = 1280, 720
 
 FONT_REGULAR_PATH = "XMUSIC/assets/thumb/font.ttf"
-FONT_BOLD_PATH = "XMUSIC/assets/thumb/font2.ttf"
-DEFAULT_THUMB = "XMUSIC/assets/thumb/IMG_20251204_211306_982.jpg"
+FONT_BOLD_PATH   = "XMUSIC/assets/thumb/font2.ttf"
+DEFAULT_THUMB    = "XMUSIC/assets/thumb/default.png"
 
 CACHE_DIR = Path(CACHE_DIR)
 CACHE_DIR.mkdir(exist_ok=True)
 
 
-# ---------------------------------------------------
-# BASIC UTILITIES
-# ---------------------------------------------------
+# ---------------- UTILITIES ----------------
 def wrap_text(draw, text, font, max_width):
-    words = text.split()
-    lines = []
-    current = ""
+    try:
+        words = text.split()
+        lines = []
+        current = ""
 
-    for w in words:
-        test = current + (" " if current else "") + w
-        if draw.textlength(test, font=font) <= max_width:
-            current = test
-        else:
+        for w in words:
+            test = current + (" " if current else "") + w
+            if draw.textlength(test, font=font) <= max_width:
+                current = test
+            else:
+                lines.append(current)
+                current = w
+
+        if current:
             lines.append(current)
-            current = w
 
-    if current:
-        lines.append(current)
-
-    return lines[:2]
+        return lines[:2]
+    except:
+        return [text]
 
 
 def create_shape_mask(size, shape="circle"):
@@ -49,32 +48,26 @@ def create_shape_mask(size, shape="circle"):
 
     if shape == "circle":
         draw.ellipse((0, 0, size, size), fill=255)
-
-    elif shape == "rounded":
-        draw.rounded_rectangle((0, 0, size, size), radius=40, fill=255)
-
     else:
-        draw.rectangle((0, 0, size, size), fill=255)
+        draw.rounded_rectangle((0, 0, size, size), radius=40, fill=255)
 
     return mask
 
 
 def random_gradient():
-    colors = [
-        ((40, 0, 70), (120, 0, 160)), 
+    return random.choice([
+        ((40, 0, 70), (120, 0, 160)),
         ((0, 40, 60), (0, 120, 180)),
         ((60, 10, 0), (200, 60, 0)),
-        ((20, 20, 20), (80, 80, 80)),
         ((10, 0, 30), (80, 0, 150)),
-    ]
-    return random.choice(colors)
+    ])
 
 
 def apply_gradient(img, colors):
     c1, c2 = colors
     w, h = img.size
     base = Image.new("RGBA", (w, h), c1)
-    top = Image.new("RGBA", (w, h), c2)
+    top  = Image.new("RGBA", (w, h), c2)
 
     mask = Image.new("L", (w, h))
     md = ImageDraw.Draw(mask)
@@ -88,10 +81,9 @@ def apply_gradient(img, colors):
 def random_layout():
     return {
         "art_size": random.randint(350, 420),
-        "art_x": random.randint(80, 180),
+        "art_x": random.randint(80, 200),
         "art_shape": random.choice(["circle", "rounded"]),
         "text_align": random.choice(["left", "right"]),
-        "show_particles": random.choice([True, False])
     }
 
 
@@ -105,64 +97,43 @@ def random_accent_color():
     ])
 
 
-def add_particles(draw, color):
-    for _ in range(80):
-        x = random.randint(0, CANVAS_W)
-        y = random.randint(0, CANVAS_H)
-        r = random.randint(2, 5)
-        draw.ellipse((x, y, x + r, y + r), fill=(*color, 120))
-
-
-def add_glow_ring(canvas, x, y, size, color, thickness):
-    glow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(glow)
-    draw.ellipse(
-        (thickness, thickness, size - thickness, size - thickness),
-        outline=(*color, 180),
-        width=thickness
-    )
-    glow = glow.filter(ImageFilter.GaussianBlur(20))
-    canvas.alpha_composite(glow, (x, y))
-
-
-# ---------------------------------------------------
-# MAIN FUNCTION (XMUSIC USES THIS)
-# ---------------------------------------------------
+# ---------------- MAIN FUNCTION ----------------
 async def get_thumb(videoid: str):
-    """
-    XMUSIC Thumbnail Generator (Updated)
-    """
 
-    url = f"https://www.youtube.com/watch?v={videoid}"
+    # Default values (Fix - prevents UnboundLocalError)
+    title    = "Unknown Title"
+    duration = "0:00"
+    views    = "0 Views"
+    channel  = "Unknown Channel"
     thumb_path = None
 
-    # ---------------- GET VIDEO DATA ----------------
+    # ----------- FETCH YOUTUBE DATA -----------
     try:
+        url = f"https://www.youtube.com/watch?v={videoid}"
         search = VideosSearch(url, limit=1)
-        data = (await search.next())["result"][0]
+        result = (await search.next())["result"][0]
 
-        title = data.get("title", "Unknown Title")
-        duration = data.get("duration", "0:00")
-        views = data.get("viewCount", {}).get("short", "0 Views")
-        channel = data.get("channel", {}).get("name", "Unknown Channel")
+        title    = result.get("title", title)
+        duration = result.get("duration", duration)
+        views    = result.get("viewCount", {}).get("short", views)
+        channel  = result.get("channel", {}).get("name", channel)
 
-        # fetch thumbnail
-        t_url = data["thumbnails"][0]["url"].split("?")[0]
+        t_url = result["thumbnails"][0]["url"].split("?")[0]
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(t_url) as r:
-                if r.status == 200:
+            async with session.get(t_url) as resp:
+                if resp.status == 200:
                     thumb_path = CACHE_DIR / f"{videoid}.png"
                     async with aiofiles.open(thumb_path, "wb") as f:
-                        await f.write(await r.read())
+                        await f.write(await resp.read())
 
         base_img = Image.open(thumb_path).convert("RGBA")
 
     except Exception:
-        print("Thumbnail fetch error — using default.")
+        print("YouTube fetch failed - using default.")
         base_img = Image.open(DEFAULT_THUMB).convert("RGBA")
 
-    # ---------------- CREATE FINAL CANVAS ----------------
+    # ----------- CREATE CANVAS -----------
     try:
         canvas = Image.new("RGBA", (CANVAS_W, CANVAS_H), (0, 0, 0))
         canvas = apply_gradient(canvas, random_gradient())
@@ -170,33 +141,31 @@ async def get_thumb(videoid: str):
         layout = random_layout()
         accent = random_accent_color()
 
-        if layout["show_particles"]:
-            add_particles(ImageDraw.Draw(canvas), accent)
+        # Paste cover art
+        size = layout["art_size"]
+        art = base_img.resize((size, size))
+        mask = create_shape_mask(size, layout["art_shape"])
 
-        art = base_img.resize((layout["art_size"], layout["art_size"]))
-        mask = create_shape_mask(layout["art_size"], layout["art_shape"])
-        art.putalpha(mask)
-
-        art_y = (CANVAS_H - layout["art_size"]) // 2
-        canvas.paste(art, (layout["art_x"], art_y), art)
+        art_y = (CANVAS_H - size) // 2
+        canvas.paste(art, (layout["art_x"], art_y), mask)
 
         draw = ImageDraw.Draw(canvas)
 
-        # Title
-        title_font = ImageFont.truetype(FONT_BOLD_PATH, 44)
-        max_w = 650
-        txt_x = 720 if layout["text_align"] == "right" else 60
+        # ---- TEXT ----
+        txt_x = 720 if layout["text_align"] == "right" else 50
         txt_y = 180
 
-        lines = wrap_text(draw, title, title_font, max_w)
-        draw.multiline_text((txt_x, txt_y), "\n".join(lines), font=title_font, fill=(255, 255, 255))
+        title_font = ImageFont.truetype(FONT_BOLD_PATH, 46)
+        lines = wrap_text(draw, title, title_font, 650)
+        draw.multiline_text((txt_x, txt_y), "\n".join(lines),
+                            fill=(255, 255, 255), font=title_font)
 
-        # Meta info
         meta_font = ImageFont.truetype(FONT_REGULAR_PATH, 32)
-        draw.text((txt_x, txt_y + 150), f"{views}", fill=(240, 240, 240), font=meta_font)
-        draw.text((txt_x, txt_y + 200), f"{duration}", fill=(230, 230, 230), font=meta_font)
-        draw.text((txt_x, txt_y + 250), f"{channel}", fill=(230, 230, 230), font=meta_font)
+        draw.text((txt_x, txt_y + 150), views,    fill=(240, 240, 240), font=meta_font)
+        draw.text((txt_x, txt_y + 200), duration, fill=(230, 230, 230), font=meta_font)
+        draw.text((txt_x, txt_y + 250), channel,  fill=(220, 220, 220), font=meta_font)
 
+        # Save output
         out = CACHE_DIR / f"{videoid}_final.png"
         canvas.save(out, optimize=True)
 
