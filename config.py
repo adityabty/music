@@ -63,7 +63,7 @@ STICKERS = [
     "CAACAgUAAx0Cd6nKUAACATJl_rsEJOsaaPSYGhU7bo7iEwL8AAPMDgACu2PYV8Vb8aT4_HUPHgQ",
 ]
 START_IMG_URL = "https://files.catbox.moe/aojp6b.jpg"
-START_IMG_URL = os.getenv("START_IMG_URL", "https://i.ibb.co/GQx3VM1M/x.jpg")
+START_IMG_URL = "START_IMG_URL", "https://i.ibb.co/GQx3VM1M/x.jpg"
 PING_IMG_URL = "https://i.ibb.co/hR8VsBwd/x.jpg"
 PLAYLIST_IMG_URL = "https://i.ibb.co/7NQmdKVx/x.jpg"
 STATS_IMG_URL = "https://i.ibb.co/KZNNDZ3/x.jpg"
