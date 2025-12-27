@@ -5,7 +5,7 @@ import aiofiles
 import traceback
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from youtubesearchpython.__future__ import VideosSearch
+from py_yt import VideosSearch
 from XMUSIC.core.dir import CACHE_DIR
 
 # ---------------- CONSTANTS ----------------
