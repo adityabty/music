@@ -11,7 +11,7 @@ from XMUSIC.core.dir import CACHE_DIR
 # ELSE NO FURTHER PUBLIC THUMBNAIL UPDATES
 
 
-logging.basicConfig(level=logging.INFO)
+
 
 def changeImageSize(maxWidth, maxHeight, image):
     widthRatio = maxWidth / image.size[0]
