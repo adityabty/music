@@ -30,7 +30,7 @@ from XMUSIC.utils.database import (
 from XMUSIC.utils.exceptions import AssistantErr
 from XMUSIC.utils.formatters import check_duration, seconds_to_min, speed_converter
 from XMUSIC.utils.inline.play import stream_markup
-from XMUSIC.utils.thumbnails import gen_thumb as get_thumb
+from XMUSIC.utils.thumbnails import get_thumb as gen_thumb
 from strings import get_string
 
 autoend = {}
