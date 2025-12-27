@@ -56,13 +56,13 @@ STRING4 = getenv("STRING_SESSION4")
 STRING5 = getenv("STRING_SESSION5")
 
 START_VIDS = [
-    "https://files.catbox.moe/tueqiw.mp4",
+    "https://files.catbox.moe/45g50h.mp4",
 ]
 STICKERS = [
     "CAACAgUAAx0Cd6nKUAACASBl_rnalOle6g7qS-ry-aZ1ZpVEnwACgg8AAizLEFfI5wfykoCR4h4E",
     "CAACAgUAAx0Cd6nKUAACATJl_rsEJOsaaPSYGhU7bo7iEwL8AAPMDgACu2PYV8Vb8aT4_HUPHgQ",
 ]
-START_IMG_URL = "https://files.catbox.moe/aojp6b.jpg"
+START_IMG_URL = "https://i.ibb.co/GQx3VM1M/x.jpg"
 HELP_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
 PING_VID_URL = "https://files.catbox.moe/hemr2n.mp4"
 PLAYLIST_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
