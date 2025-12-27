@@ -63,18 +63,16 @@ STICKERS = [
     "CAACAgUAAx0Cd6nKUAACATJl_rsEJOsaaPSYGhU7bo7iEwL8AAPMDgACu2PYV8Vb8aT4_HUPHgQ",
 ]
 START_IMG_URL = "https://files.catbox.moe/aojp6b.jpg"
-START_IMG_URL = "START_IMG_URL", "https://i.ibb.co/GQx3VM1M/x.jpg"
-PING_IMG_URL = "https://i.ibb.co/hR8VsBwd/x.jpg"
-PLAYLIST_IMG_URL = "https://i.ibb.co/7NQmdKVx/x.jpg"
-STATS_IMG_URL = "https://i.ibb.co/KZNNDZ3/x.jpg"
-TELEGRAM_AUDIO_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-TELEGRAM_VIDEO_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-STREAM_IMG_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-SOUNCLOUD_IMG_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-YOUTUBE_IMG_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-SPOTIFY_ARTIST_IMG_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-SPOTIFY_ALBUM_IMG_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
-SPOTIFY_PLAYLIST_IMG_URL = "https://i.ibb.co/prnzHxFh/x.jpg"
+HELP_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
+PING_VID_URL = "https://files.catbox.moe/hemr2n.mp4"
+PLAYLIST_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
+STATS_VID_URL = "https://files.catbox.moe/hemr2n.mp4"
+TELEGRAM_AUDIO_URL = "https://files.catbox.moe/hibcq5.jpg"
+TELEGRAM_VIDEO_URL = "https://files.catbox.moe/hibcq5.jpg"
+STREAM_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
+SOUNCLOUD_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
+YOUTUBE_IMG_URL = "https://files.catbox.moe/hibcq5.jpg"
+SPOTIFY_ARTIST_IMG_URL = SPOTIFY_ALBUM_IMG_URL = SPOTIFY_PLAYLIST_IMG_URL = YOUTUBE_IMG_URL
 
 def time_to_seconds(time: str) -> int:
     return sum(int(x) * 60**i for i, x in enumerate(reversed(time.split(":"))))
