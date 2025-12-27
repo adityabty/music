@@ -47,9 +47,9 @@ def create_shape_mask(size, shape="circle"):
     draw = ImageDraw.Draw(mask)
 
     if shape == "circle":
-        draw.ellipse((0, 0, size, size), fill=255)
+            draw.ellipse((0, 0, size, size), fill=255)
     else:
-        draw.rounded_rectangle((0, 0, size, size), radius=40, fill=255)
+            draw.rounded_rectangle((0, 0, size, size), radius=40, fill=255)
 
     return mask
 
@@ -97,10 +97,45 @@ def random_accent_color():
     ])
 
 
+# --------- 🔥 UPBEAT RHYTHM OVERLAY ---------
+def add_rhythm_overlay(canvas, accent):
+    w, h = canvas.size
+    draw = ImageDraw.Draw(canvas)
+
+    # soft neon glow rings
+    glow = Image.new("RGBA", (w, h), (0,0,0,0))
+    gd = ImageDraw.Draw(glow)
+
+    for r in range(120, 360, 24):
+        alpha = max(5, 90 - r // 5)
+        gd.ellipse(
+            (w//2 - r, h//2 - r, w//2 + r, h//2 + r),
+            outline=(accent[0], accent[1], accent[2], alpha),
+            width=4
+        )
+
+    glow = glow.filter(ImageFilter.GaussianBlur(7))
+    canvas.alpha_composite(glow)
+
+    # rhythm sound-wave pulse lines
+    for i in range(14):
+        y = int(h * 0.22 + i * 24)
+        for x in range(0, w, 14):
+            offset = (i * 6 + x % 36) - 18
+            draw.line(
+                (x, y - offset//5, x+10, y + offset//6),
+                fill=(accent[0], accent[1], accent[2], 180),
+                width=2
+            )
+
+    # subtle motion streak blur
+    streaks = canvas.filter(ImageFilter.GaussianBlur(2))
+    canvas.alpha_composite(streaks)
+
+
 # ---------------- MAIN FUNCTION ----------------
 async def get_thumb(videoid: str):
 
-    # Default values (Fix - prevents UnboundLocalError)
     title    = "Unknown Title"
     duration = "0:00"
     views    = "0 Views"
@@ -130,7 +165,7 @@ async def get_thumb(videoid: str):
         base_img = Image.open(thumb_path).convert("RGBA")
 
     except Exception:
-        print("YouTube fetch failed - using default.")
+        print("YouTube fetch failed — using default.")
         base_img = Image.open(DEFAULT_THUMB).convert("RGBA")
 
     # ----------- CREATE CANVAS -----------
@@ -141,12 +176,12 @@ async def get_thumb(videoid: str):
         layout = random_layout()
         accent = random_accent_color()
 
-        # Paste cover art
+        # cover art render
         size = layout["art_size"]
         art = base_img.resize((size, size))
         mask = create_shape_mask(size, layout["art_shape"])
-
         art_y = (CANVAS_H - size) // 2
+
         canvas.paste(art, (layout["art_x"], art_y), mask)
 
         draw = ImageDraw.Draw(canvas)
@@ -157,15 +192,24 @@ async def get_thumb(videoid: str):
 
         title_font = ImageFont.truetype(FONT_BOLD_PATH, 46)
         lines = wrap_text(draw, title, title_font, 650)
-        draw.multiline_text((txt_x, txt_y), "\n".join(lines),
-                            fill=(255, 255, 255), font=title_font)
+
+        draw.multiline_text(
+            (txt_x, txt_y),
+            "\n".join(lines),
+            fill=(255, 255, 255),
+            font=title_font
+        )
 
         meta_font = ImageFont.truetype(FONT_REGULAR_PATH, 32)
+
         draw.text((txt_x, txt_y + 150), views,    fill=(240, 240, 240), font=meta_font)
         draw.text((txt_x, txt_y + 200), duration, fill=(230, 230, 230), font=meta_font)
         draw.text((txt_x, txt_y + 250), channel,  fill=(220, 220, 220), font=meta_font)
 
-        # Save output
+        # 🔥 add upbeat rhythm design
+        add_rhythm_overlay(canvas, accent)
+
+        # save output
         out = CACHE_DIR / f"{videoid}_final.png"
         canvas.save(out, optimize=True)
 
