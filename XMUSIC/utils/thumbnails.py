@@ -47,25 +47,26 @@ def create_shape_mask(size, shape="circle"):
     draw = ImageDraw.Draw(mask)
 
     if shape == "circle":
-            draw.ellipse((0, 0, size, size), fill=255)
+        draw.ellipse((0, 0, size, size), fill=255)
     else:
-            draw.rounded_rectangle((0, 0, size, size), radius=40, fill=255)
+        draw.rounded_rectangle((0, 0, size, size), radius=40, fill=255)
 
     return mask
 
 
 def random_gradient():
     return random.choice([
-        ((40, 0, 70), (120, 0, 160)),
-        ((0, 40, 60), (0, 120, 180)),
-        ((60, 10, 0), (200, 60, 0)),
-        ((10, 0, 30), (80, 0, 150)),
+        ((25, 10, 40), (90, 20, 120)),
+        ((10, 40, 60), (0, 110, 160)),
+        ((40, 12, 0), (160, 60, 10)),
+        ((12, 10, 35), (90, 0, 140)),
     ])
 
 
 def apply_gradient(img, colors):
     c1, c2 = colors
     w, h = img.size
+
     base = Image.new("RGBA", (w, h), c1)
     top  = Image.new("RGBA", (w, h), c2)
 
@@ -80,57 +81,61 @@ def apply_gradient(img, colors):
 
 def random_layout():
     return {
-        "art_size": random.randint(350, 420),
-        "art_x": random.randint(80, 200),
-        "art_shape": random.choice(["circle", "rounded"]),
-        "text_align": random.choice(["left", "right"]),
+        "art_size": 420,
+        "art_x": 120,
+        "art_shape": "circle",
+        "text_align": "right"
     }
 
 
 def random_accent_color():
     return random.choice([
-        (255, 90, 90),
-        (255, 160, 60),
-        (100, 230, 255),
-        (255, 60, 220),
-        (160, 255, 80),
+        (255, 120, 80),
+        (120, 200, 255),
+        (255, 80, 200),
+        (160, 255, 120),
     ])
 
 
-# --------- 🔥 UPBEAT RHYTHM OVERLAY ---------
-def add_rhythm_overlay(canvas, accent):
+# --------- ⭐ PROFESSIONAL MUSIC CARD STYLE ---------
+def add_professional_music_style(canvas, accent):
     w, h = canvas.size
     draw = ImageDraw.Draw(canvas)
 
-    # soft neon glow rings
-    glow = Image.new("RGBA", (w, h), (0,0,0,0))
-    gd = ImageDraw.Draw(glow)
+    # soft vignette around frame
+    vignette = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    vg = ImageDraw.Draw(vignette)
 
-    for r in range(120, 360, 24):
-        alpha = max(5, 90 - r // 5)
-        gd.ellipse(
+    for r in range(200, 900, 40):
+        vg.ellipse(
             (w//2 - r, h//2 - r, w//2 + r, h//2 + r),
-            outline=(accent[0], accent[1], accent[2], alpha),
-            width=4
+            outline=(0, 0, 0, int(r/6)),
+            width=6
         )
 
-    glow = glow.filter(ImageFilter.GaussianBlur(7))
-    canvas.alpha_composite(glow)
+    vignette = vignette.filter(ImageFilter.GaussianBlur(18))
+    canvas.alpha_composite(vignette)
 
-    # rhythm sound-wave pulse lines
-    for i in range(14):
-        y = int(h * 0.22 + i * 24)
-        for x in range(0, w, 14):
-            offset = (i * 6 + x % 36) - 18
-            draw.line(
-                (x, y - offset//5, x+10, y + offset//6),
-                fill=(accent[0], accent[1], accent[2], 180),
-                width=2
-            )
+    # glass info panel
+    panel = Image.new("RGBA", (700, 310), (0, 0, 0, 110))
+    panel = panel.filter(ImageFilter.GaussianBlur(3))
+    canvas.alpha_composite(panel, (520, 200))
 
-    # subtle motion streak blur
-    streaks = canvas.filter(ImageFilter.GaussianBlur(2))
-    canvas.alpha_composite(streaks)
+    # accent divider
+    draw.line(
+        (540, 250, 1180, 250),
+        fill=(accent[0], accent[1], accent[2], 220),
+        width=3
+    )
+
+    # minimal rhythm lines (subtle)
+    for i in range(10):
+        y = 270 + (i * 18)
+        draw.line(
+            (550, y, 1170, y),
+            fill=(accent[0], accent[1], accent[2], 85),
+            width=1
+        )
 
 
 # ---------------- MAIN FUNCTION ----------------
@@ -187,11 +192,11 @@ async def get_thumb(videoid: str):
         draw = ImageDraw.Draw(canvas)
 
         # ---- TEXT ----
-        txt_x = 720 if layout["text_align"] == "right" else 50
-        txt_y = 180
+        txt_x = 560
+        txt_y = 210
 
-        title_font = ImageFont.truetype(FONT_BOLD_PATH, 46)
-        lines = wrap_text(draw, title, title_font, 650)
+        title_font = ImageFont.truetype(FONT_BOLD_PATH, 48)
+        lines = wrap_text(draw, title, title_font, 580)
 
         draw.multiline_text(
             (txt_x, txt_y),
@@ -202,12 +207,12 @@ async def get_thumb(videoid: str):
 
         meta_font = ImageFont.truetype(FONT_REGULAR_PATH, 32)
 
-        draw.text((txt_x, txt_y + 150), views,    fill=(240, 240, 240), font=meta_font)
-        draw.text((txt_x, txt_y + 200), duration, fill=(230, 230, 230), font=meta_font)
-        draw.text((txt_x, txt_y + 250), channel,  fill=(220, 220, 220), font=meta_font)
+        draw.text((txt_x, txt_y + 140), f"{views}",    fill=(230, 230, 230), font=meta_font)
+        draw.text((txt_x, txt_y + 185), f"{duration}", fill=(225, 225, 225), font=meta_font)
+        draw.text((txt_x, txt_y + 230), f"{channel}",  fill=(215, 215, 215), font=meta_font)
 
-        # 🔥 add upbeat rhythm design
-        add_rhythm_overlay(canvas, accent)
+        # ⭐ clean professional look
+        add_professional_music_style(canvas, accent)
 
         # save output
         out = CACHE_DIR / f"{videoid}_final.png"
