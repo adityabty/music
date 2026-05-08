@@ -19,7 +19,7 @@ CACHE_DIR.mkdir(exist_ok=True)
 CANVAS_W, CANVAS_H = 1320, 760
 
 FONT_REGULAR_PATH = "ShrutiMusic/assets/font2.ttf"
-FONT_BOLD_PATH = "ShrutiMusic/assets/font3.ttf"
+FONT_BOLD_PATH = "XMUSIC/assets/thumb/font.ttf"
 DEFAULT_THUMB = "XMUSIC/assets/thumb/IMG_20251204_211306_982.jpg"
 
 
