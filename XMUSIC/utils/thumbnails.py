@@ -20,7 +20,7 @@ CANVAS_W, CANVAS_H = 1320, 760
 
 FONT_REGULAR_PATH = "ShrutiMusic/assets/font2.ttf"
 FONT_BOLD_PATH = "ShrutiMusic/assets/font3.ttf"
-DEFAULT_THUMB = "ShrutiMusic/assets/ShrutiBots.jpg"
+DEFAULT_THUMB = "XMUSIC/assets/thumb/IMG_20251204_211306_982.jpg"
 
 
 def wrap_text(draw, text, font, max_width):
